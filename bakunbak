@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+
+import os
+import sys
+import argparse
+import shutil
+import glob
+import re
+
+bak_finder = re.compile(r'(.bak\d*)$')
+unbak_finder = re.compile(r'(.bak)(\d*)$')
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--force", action="store_true",
+                    help="Overwrite (bak) or restore (unbak) a file if the target exists.")
+parser.add_argument("-n", "--number", type=int,
+                    help="Additional identifier to add to .bak (for making and specifying multiple backup names")
+parser.add_argument(metavar='GLOB', type=str, nargs='+', dest='files',
+                    help='Files to backup or restore')
+args = parser.parse_args()
+
+mode = "unbak" if sys.argv[0].endswith("unbak") else "bak"
+print(len(sys.argv))
+print(mode)
+print("num:", args.number)
+
+
+def is_n_bakked(file, nstr):
+    is_bak = False
+    num = None
+
+    return bak_finder.search(file)
+
+    if (res):
+        num = res.groups()[1] if res.groups()[1] != '' else None
+
+        if (nstr == '' and num == None) or (nstr == num):
+            is_bak = True
+
+    return is_bak
+
+def is_bakked_any(file):
+    is_bak = False
+    num = None
+
+    res = bak_finder.search(file) != None
+
+    return res
+
+if mode == "bak":
+    for filename in args.files:
+        print("bak:", filename)
+
+        nstr = str(args.number) if args.number else ''
+        bakked_filename = "%s.bak%s" % (filename, nstr)
+
+        if is_bakked_any(bakked_filename):
+            continue
+
+        shutil.move(filename, bakked_filename)
+else:
+    for filename in args.files:
+        print("unbak:", filename)
+
+        nstr = str(args.number) if args.number else ''
+        bakked_filename = "%s.bak%s" % (filename, nstr)
+
+        if not is_bakked_any(bakked_filename):
+            continue
+
+        if is_n_bakked(bakked_filename, nstr):
+            shutil.move(bakked_filename, filename)
+
+exit(0)
