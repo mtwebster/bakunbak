@@ -13,33 +13,26 @@ unbak_finder = re.compile(r'(.bak)(\d*)$')
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--force", action="store_true",
                     help="Overwrite (bak) or restore (unbak) a file if the target exists.")
-parser.add_argument("-n", "--number", type=int,
-                    help="Additional identifier to add to .bak (for making and specifying multiple backup names")
-parser.add_argument(metavar='GLOB', type=str, nargs='+', dest='files',
-                    help='Files to backup or restore')
+parser.add_argument("-c", "--copy", action="store_true",
+                    help="When backing up, leave the original. When restoring, leave the backup.")
+parser.add_argument(metavar='pattern', type=str, nargs='+', dest='files',
+                    help='Filenames or patterns to backup or restore')
+group = parser.add_argument_group("miscellaneous")
+group.add_argument("-d", "--debug", action="store_true",
+                   help="Show lots of info about what's going on.")
+group.add_argument("-v", "--version", action="store_true",
+                   help="Print the program version.")
+
+def debug(msg):
+    if args.debug:
+        print("debug: %s" % msg)
+
 args = parser.parse_args()
-
 mode = "unbak" if sys.argv[0].endswith("unbak") else "bak"
-print(len(sys.argv))
-print(mode)
-print("num:", args.number)
 
+debug("mode is %s, copying: %s, force: %s" % (mode, args.copy, args.force))
 
-def is_n_bakked(file, nstr):
-    is_bak = False
-    num = None
-
-    return bak_finder.search(file)
-
-    if (res):
-        num = res.groups()[1] if res.groups()[1] != '' else None
-
-        if (nstr == '' and num == None) or (nstr == num):
-            is_bak = True
-
-    return is_bak
-
-def is_bakked_any(file):
+def is_bakked(file):
     is_bak = False
     num = None
 
@@ -49,26 +42,63 @@ def is_bakked_any(file):
 
 if mode == "bak":
     for filename in args.files:
-        print("bak:", filename)
+        bakked_filename = "%s.bak" % (filename,)
 
-        nstr = str(args.number) if args.number else ''
-        bakked_filename = "%s.bak%s" % (filename, nstr)
-
-        if is_bakked_any(bakked_filename):
+        if is_bakked(filename):
+            debug("%s is already a backup, ignoring" % filename)
             continue
 
-        shutil.move(filename, bakked_filename)
+        if os.path.exists(bakked_filename):
+            if not args.force:
+                print("%s exists, skipping (use --force to copy anyway)." % bakked_filename)
+                continue
+            else:
+                debug("%s exists, but continuing anyway because of --force" % bakked_filename)
+
+        if args.copy:
+            debug("copying %s to %s" % (filename, bakked_filename))
+            if os.path.isdir(filename):
+                shutil.rmtree(bakked_filename, ignore_errors=True)
+                shutil.copytree(filename, bakked_filename, dirs_exist_ok=True)
+            else:
+                shutil.copy2(filename, bakked_filename)
+        else:
+            debug("moving %s to %s" % (filename, bakked_filename))
+            shutil.move(filename, bakked_filename)
+        print("done")
 else:
     for filename in args.files:
-        print("unbak:", filename)
+        if filename.endswith(".bak"):
+            unbakked_filename = filename.replace(".bak", "")
+        else:
+            test_bakked = filename + ".bak"
+            if os.path.exists(test_bakked):
+                unbakked_filename = filename
+                filename = test_bakked
 
-        nstr = str(args.number) if args.number else ''
-        bakked_filename = "%s.bak%s" % (filename, nstr)
-
-        if not is_bakked_any(bakked_filename):
+        if not os.path.exists(filename):
+            print("%s is not bakked, skipping" % (filename,))
             continue
 
-        if is_n_bakked(bakked_filename, nstr):
-            shutil.move(bakked_filename, filename)
+        debug("file: %s ---> %s" % (filename, unbakked_filename))
+
+        if os.path.exists(unbakked_filename):
+            if not args.force:
+                print("%s exists (probably from using -c originally) - skipping (use --force to copy anyway)." % unbakked_filename)
+                continue
+            else:
+                debug("%s exists (probably from using -c originally), but continuing anyway because of --force" % unbakked_filename)
+
+        if args.copy:
+            debug("copying %s to %s" % (filename, unbakked_filename))
+            if os.path.isdir(unbakked_filename):
+                shutil.rmtree(unbakked_filename, ignore_errors=True)
+                shutil.copytree(filename, unbakked_filename, dirs_exist_ok=True)
+            else:
+                shutil.copy2(filename, unbakked_filename)
+        else:
+            debug("moving %s to %s" % (filename, unbakked_filename))
+            shutil.move(filename, unbakked_filename)
+        print("ok")
 
 exit(0)
