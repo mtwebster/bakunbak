@@ -82,13 +82,14 @@ else:
         if filename.endswith(".bak"):
             unbakked_filename = filename.replace(".bak", "")
         else:
-            test_bakked = filename + ".bak"
-            if os.path.exists(test_bakked):
-                unbakked_filename = filename
-                filename = test_bakked
+            unbakked_filename = filename
+            filename = filename + ".bak"
 
         if not os.path.exists(filename):
-            print("%s is not bakked, skipping" % (filename,))
+            if os.path.exists(unbakked_filename):
+                print("%s is not bakked, skipping" % (filename,))
+            else:
+                print("%s does not exist in any form, skipping" % (unbakked_filename,))
             continue
 
         debug("file: %s ---> %s" % (filename, unbakked_filename))
