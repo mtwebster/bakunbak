@@ -10,7 +10,18 @@ import re
 bak_finder = re.compile(r'(.bak\d*)$')
 unbak_finder = re.compile(r'(.bak)(\d*)$')
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+    prog="bak | unbak",
+    description="""
+A simple utility to append .bak to files (either by renaming or copying)
+and then restore them (again, either renaming or copying).
+""",
+    epilog="""
+Note: when overwriting existing folders, the destination is first removed,
+then the source copied or moved.
+File metadata should be preserved in all cases.
+"""
+)
 parser.add_argument("-f", "--force", action="store_true",
                     help="Overwrite (bak) or restore (unbak) a file if the target exists.")
 parser.add_argument("-c", "--copy", action="store_true",
