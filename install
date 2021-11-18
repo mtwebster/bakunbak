@@ -1,0 +1,10 @@
+#!/bin/sh
+echo
+echo This will install bakunbak files to /usr/local/bin
+echo 'The files are bak, unbak (symlinks) and bakunbak (python3 script)'
+echo You need root or sudo to do this
+echo
+cp bak /usr/local/bin
+cp unbak /usr/local/bin
+cp bakunbak /usr/local/bin
+echo Done
