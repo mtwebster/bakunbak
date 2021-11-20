@@ -105,7 +105,7 @@ else:
 
         if args.copy:
             debug("copying %s to %s" % (filename, unbakked_filename))
-            if os.path.isdir(unbakked_filename):
+            if os.path.isdir(filename):
                 shutil.rmtree(unbakked_filename, ignore_errors=True)
                 # FIXME: copytree won't copy dangling symlinks ?? even with symlinks=True
                 os.system("cp -rP %s %s" % (filename, unbakked_filename))
