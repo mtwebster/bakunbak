@@ -4,11 +4,7 @@ import os
 import sys
 import argparse
 import shutil
-import glob
-import re
-
-bak_finder = re.compile(r'(.bak\d*)$')
-unbak_finder = re.compile(r'(.bak)(\d*)$')
+from pathlib import PosixPath, PurePath
 
 parser = argparse.ArgumentParser(
     prog="bak | unbak",
@@ -53,68 +49,83 @@ def is_bakked(file):
 
 if mode == "bak":
     for filename in args.files:
-        bakked_filename = "%s.bak" % (filename,)
+        path = PurePath(filename)
 
-        if is_bakked(filename):
-            debug("%s is already a backup, ignoring" % filename)
+        bakked_file = PosixPath(path.with_suffix(".bak"))
+        source_file = PosixPath(path)
+
+        if not source_file.exists():
+            print("%s does not exist, skipping" % (source_file,))
             continue
 
-        if os.path.exists(bakked_filename):
+        if source_file.suffix == ".bak":
+            print("%s is already a backup, ignoring" % source_file)
+            continue
+
+        if bakked_file.exists():
             if not args.force:
-                print("%s exists, skipping (use --force to copy anyway)." % bakked_filename)
+                print("%s exists, skipping (use --force to copy anyway)." % bakked_file)
                 continue
             else:
-                debug("%s exists, but continuing anyway because of --force" % bakked_filename)
+                debug("%s exists, but continuing anyway because of --force" % bakked_file)
 
         if args.copy:
-            debug("copying %s to %s" % (filename, bakked_filename))
-            if os.path.isdir(filename):
-                shutil.rmtree(bakked_filename, ignore_errors=True)
+            debug("copying %s to %s" % (source_file, bakked_file))
+            if source_file.is_dir():
+                shutil.rmtree(bakked_file, ignore_errors=True)
                 # FIXME: copytree won't copy dangling symlinks ?? even with symlinks=True
-                os.system("cp -rP %s %s" % (filename, bakked_filename))
+                os.system("cp -rP %s %s" % (source_file, bakked_file))
                 # shutil.copytree(filename, bakked_filename, dirs_exist_ok=True)
             else:
-                shutil.copy2(filename, bakked_filename)
+                shutil.copy2(source_file, bakked_file)
         else:
-            debug("moving %s to %s" % (filename, bakked_filename))
-            shutil.move(filename, bakked_filename)
+            debug("moving %s to %s" % (source_file, bakked_file))
+            shutil.rmtree(bakked_file, ignore_errors=True)
+            # move supports path-like objects starting in 3.9
+            shutil.move(source_file.as_posix(), bakked_file.as_posix())
+
         print("done")
 else:
     for filename in args.files:
-        if filename.endswith(".bak"):
-            unbakked_filename = filename.replace(".bak", "")
-        else:
-            unbakked_filename = filename
-            filename = filename + ".bak"
+        path = PurePath(filename)
 
-        if not os.path.exists(filename):
-            if os.path.exists(unbakked_filename):
-                print("%s is not bakked, skipping" % (filename,))
+        if path.suffix == ".bak":
+            unbakked_file = PosixPath(path.with_suffix(""))
+            source_file = PosixPath(path)
+        else:
+            unbakked_file = PosixPath(path)
+            source_file = PosixPath(path.with_suffix(".bak"))
+
+        if not os.path.exists(source_file):
+            if os.path.exists(unbakked_file):
+                print("%s is not bakked, skipping" % (source_file,))
             else:
-                print("%s does not exist in any form, skipping" % (unbakked_filename,))
+                print("%s does not exist in any form, skipping" % (unbakked_file,))
             continue
 
-        debug("file: %s ---> %s" % (filename, unbakked_filename))
+        debug("file: %s ---> %s" % (source_file, unbakked_file))
 
-        if os.path.exists(unbakked_filename):
+        if unbakked_file.exists():
             if not args.force:
-                print("%s exists (probably from using -c originally) - skipping (use --force to copy anyway)." % unbakked_filename)
+                print("%s exists (probably from using -c originally) - skipping (use --force to copy anyway)." % unbakked_file)
                 continue
             else:
-                debug("%s exists (probably from using -c originally), but continuing anyway because of --force" % unbakked_filename)
+                debug("%s exists (probably from using -c originally), but continuing anyway because of --force" % unbakked_file)
 
         if args.copy:
-            debug("copying %s to %s" % (filename, unbakked_filename))
-            if os.path.isdir(filename):
-                shutil.rmtree(unbakked_filename, ignore_errors=True)
+            debug("copying %s to %s" % (source_file, unbakked_file))
+            if source_file.is_dir():
+                shutil.rmtree(unbakked_file, ignore_errors=True)
                 # FIXME: copytree won't copy dangling symlinks ?? even with symlinks=True
-                os.system("cp -rP %s %s" % (filename, unbakked_filename))
-                # shutil.copytree(filename, unbakked_filename, dirs_exist_ok=True)
+                os.system("cp -rP %s %s" % (source_file, unbakked_file))
+                # shutil.copytree(source_file, unbakked_file, dirs_exist_ok=True)
             else:
-                shutil.copy2(filename, unbakked_filename)
+                shutil.copy2(source_file, unbakked_file)
         else:
-            debug("moving %s to %s" % (filename, unbakked_filename))
-            shutil.move(filename, unbakked_filename)
+            debug("moving %s to %s" % (source_file, unbakked_file))
+            shutil.rmtree(unbakked_file, ignore_errors=True)
+            # move supports path-like objects starting in 3.9
+            shutil.move(source_file.as_posix(), unbakked_file.as_posix())
         print("ok")
 
 exit(0)
