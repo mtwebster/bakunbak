@@ -9,5 +9,9 @@ Build-Depends:
 Package: bakunbak
 Architecture: all
 Depends: python3
-Description: Easily .bak a file or folder, then restore.
+Description: Easily .bak a file or folder, then restore it.
+ This is a simple convenience tool for making temporary 'backup'
+ copies of files or folders, by adding and removing .bak to their
+ filenames. A limited number of options allow copying instead of
+ moving, and forcing overwrite of existing files.
 
