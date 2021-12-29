@@ -1,0 +1,259 @@
+#!/usr/bin/python3
+import os
+import subprocess
+from pathlib import PosixPath
+import unittest
+from test import support
+
+# There are more permutations to test but this covers most of the code i think...
+
+class BackupFileNotFound(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+
+    def tearDown(self):
+        pass
+
+    def test_(self):
+        out = subprocess.check_output("./bak -t %s" % self.unbakked, shell=True)
+        self.assertTrue(out.decode().strip() == "BAK_SOURCE_MISSING")
+
+class BackupAlreadyBackedUp(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo.bak")
+        self.unbakked.touch()
+
+    def tearDown(self):
+        self.unbakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./bak -t %s" % self.unbakked, shell=True)
+        self.assertTrue(out.decode().strip() == "BAK_IS_A_BAK_ALREADY")
+        self.assertTrue(self.unbakked.exists())
+
+class RestoreNotBackedUp(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+    def tearDown(self):
+        self.unbakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./unbak -t %s" % self.unbakked, shell=True)
+        self.assertTrue(out.decode().strip() == "UNBAK_FILE_NOT_BAKKED")
+        self.assertTrue(self.unbakked.exists())
+
+class RestoreNoFilesFound(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+
+    def tearDown(self):
+        pass
+
+    def test_(self):
+        out = subprocess.check_output("./unbak -t %s" % self.unbakked, shell=True)
+        self.assertTrue(out.decode().strip() == "UNBAK_NO_FILES_FOUND")
+
+class BackupWithOriginalName(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+
+    def tearDown(self):
+        self.bakked.unlink()
+
+    def test_(self):
+        subprocess.check_output("./bak -t %s" % self.unbakked, shell=True)
+
+        self.assertTrue(self.bakked.exists())
+        self.assertFalse(self.unbakked.exists())
+
+class RestoreWithOriginalName(unittest.TestCase):
+    def setUp(self):
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+        self.unbakked = PosixPath("./test-file.foo")
+
+    def tearDown(self):
+        self.unbakked.unlink()
+
+    def test_(self):
+        subprocess.check_output("./unbak -t %s" % self.bakked, shell=True)
+
+        self.assertTrue(self.unbakked.exists())
+        self.assertFalse(self.bakked.exists())
+
+class RestoreWithBackupName(unittest.TestCase):
+    def setUp(self):
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+        self.unbakked = PosixPath("./test-file.foo")
+
+    def tearDown(self):
+        self.unbakked.unlink()
+
+    def test_(self):
+        subprocess.check_output("./unbak -t %s" % self.unbakked, shell=True)
+
+        self.assertTrue(self.unbakked.exists())
+        self.assertFalse(self.bakked.exists())
+
+class BackupWithCopy(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+        self.bakked = PosixPath("./test-file.foo.bak")
+
+    def tearDown(self):
+        self.unbakked.unlink()
+        self.bakked.unlink()
+
+    def test_(self):
+        subprocess.check_output("./bak -t -c %s" % self.unbakked, shell=True)
+
+        self.assertTrue(self.unbakked.exists())
+        self.assertTrue(self.bakked.exists())
+
+class RestoreWithCopyOriginalName(unittest.TestCase):
+    def setUp(self):
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+        self.unbakked = PosixPath("./test-file.foo")
+
+    def tearDown(self):
+        self.unbakked.unlink()
+        self.bakked.unlink()
+
+    def test_(self):
+        subprocess.check_output("./unbak -t -c %s" % self.unbakked, shell=True)
+
+        self.assertTrue(self.unbakked.exists())
+        self.assertTrue(self.bakked.exists())
+
+class RestoreWithCopyBackupName(unittest.TestCase):
+    def setUp(self):
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+        self.unbakked = PosixPath("./test-file.foo")
+
+    def tearDown(self):
+        self.unbakked.unlink()
+        self.bakked.unlink()
+
+    def test_(self):
+        subprocess.check_output("./unbak -t -c %s" % self.bakked, shell=True)
+
+        self.assertTrue(self.unbakked.exists())
+        self.assertTrue(self.bakked.exists())
+
+class BackupWithOriginalName_ExistingTargetNoForce(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+    def tearDown(self):
+        self.bakked.unlink()
+        self.unbakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./bak -t %s" % self.unbakked, shell=True)
+        self.assertTrue(out.decode().strip() == "BAK_TARGET_EXISTS")
+        self.assertTrue(self.bakked.exists())
+        self.assertTrue(self.unbakked.exists())
+
+class BackupWithOriginalName_ExistingTargetForce(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+    def tearDown(self):
+        self.bakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./bak -t -f %s" % self.unbakked, shell=True)
+        # self.assertTrue(out.decode().strip() == "BAK_TARGET_EXISTS")
+        self.assertTrue(self.bakked.exists())
+        self.assertFalse(self.unbakked.exists())
+
+class RestoreWithOriginalName_ExistingTargetNoForce(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+    def tearDown(self):
+        self.unbakked.unlink()
+        self.bakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./unbak -t %s" % self.unbakked, shell=True)
+        self.assertTrue(out.decode().strip() == "UNBAK_TARGET_EXISTS")
+        self.assertTrue(self.bakked.exists())
+        self.assertTrue(self.unbakked.exists())
+
+class RestoreWithBackupName_ExistingTargetNoForce(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+    def tearDown(self):
+        self.unbakked.unlink()
+        self.bakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./unbak -t %s" % self.bakked, shell=True)
+        self.assertTrue(out.decode().strip() == "UNBAK_TARGET_EXISTS")
+        self.assertTrue(self.bakked.exists())
+        self.assertTrue(self.unbakked.exists())
+
+class RestoreWithOriginalName_ExistingTargetForce(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+    def tearDown(self):
+        self.unbakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./unbak -f -t %s" % self.unbakked, shell=True)
+        self.assertFalse(self.bakked.exists())
+        self.assertTrue(self.unbakked.exists())
+
+class RestoreWithBackupName_ExistingTargetForce(unittest.TestCase):
+    def setUp(self):
+        self.unbakked = PosixPath("./test-file.foo")
+        self.unbakked.touch()
+
+        self.bakked = PosixPath("./test-file.foo.bak")
+        self.bakked.touch()
+
+    def tearDown(self):
+        self.unbakked.unlink()
+
+    def test_(self):
+        out = subprocess.check_output("./unbak -f -t %s" % self.bakked, shell=True)
+        self.assertFalse(self.bakked.exists())
+        self.assertTrue(self.unbakked.exists())
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

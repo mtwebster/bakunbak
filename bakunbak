@@ -27,6 +27,8 @@ parser.add_argument(metavar='pattern', type=str, nargs='+', dest='files',
 group = parser.add_argument_group("miscellaneous")
 group.add_argument("-d", "--debug", action="store_true",
                    help="Show lots of info about what's going on.")
+group.add_argument("-t", "--test", action="store_true",
+                   help="Test mode - used only for testing suite.")
 group.add_argument("-v", "--version", action="store_true",
                    help="Print the program version.")
 
@@ -39,31 +41,36 @@ mode = "unbak" if sys.argv[0].endswith("unbak") else "bak"
 
 debug("mode is %s, copying: %s, force: %s" % (mode, args.copy, args.force))
 
-def is_bakked(file):
-    is_bak = False
-    num = None
-
-    res = bak_finder.search(file) != None
-
-    return res
+# for tests
+testing = args.test
 
 if mode == "bak":
     for filename in args.files:
         path = PurePath(filename)
 
-        bakked_file = PosixPath(path.with_suffix(".bak"))
+        bakked_file = PosixPath(path.with_suffix(path.suffix + ".bak"))
         source_file = PosixPath(path)
 
         if not source_file.exists():
-            print("%s does not exist, skipping" % (source_file,))
-            continue
+            if testing:
+                print("BAK_SOURCE_MISSING")
+                exit(0)
+            else:
+                print("%s does not exist, skipping" % (source_file,))
+                continue
 
         if source_file.suffix == ".bak":
+            if testing:
+                print("BAK_IS_A_BAK_ALREADY")
+                exit(0)
             print("%s is already a backup, ignoring" % source_file)
             continue
 
         if bakked_file.exists():
             if not args.force:
+                if testing:
+                    print("BAK_TARGET_EXISTS")
+                    exit(0)
                 print("%s exists, skipping (use --force to copy anyway)." % bakked_file)
                 continue
             else:
@@ -84,7 +91,7 @@ if mode == "bak":
             # move supports path-like objects starting in 3.9
             shutil.move(source_file.as_posix(), bakked_file.as_posix())
 
-        print("done")
+        print("bak done")
 else:
     for filename in args.files:
         path = PurePath(filename)
@@ -94,12 +101,18 @@ else:
             source_file = PosixPath(path)
         else:
             unbakked_file = PosixPath(path)
-            source_file = PosixPath(path.with_suffix(".bak"))
+            source_file = PosixPath(path.with_suffix(path.suffix + ".bak"))
 
         if not os.path.exists(source_file):
             if os.path.exists(unbakked_file):
+                if testing:
+                    print("UNBAK_FILE_NOT_BAKKED")
+                    exit(0)
                 print("%s is not bakked, skipping" % (source_file,))
             else:
+                if testing:
+                    print("UNBAK_NO_FILES_FOUND")
+                    exit(0)
                 print("%s does not exist in any form, skipping" % (unbakked_file,))
             continue
 
@@ -107,6 +120,9 @@ else:
 
         if unbakked_file.exists():
             if not args.force:
+                if testing:
+                    print("UNBAK_TARGET_EXISTS")
+                    exit(0)
                 print("%s exists (probably from using -c originally) - skipping (use --force to copy anyway)." % unbakked_file)
                 continue
             else:
@@ -126,6 +142,7 @@ else:
             shutil.rmtree(unbakked_file, ignore_errors=True)
             # move supports path-like objects starting in 3.9
             shutil.move(source_file.as_posix(), unbakked_file.as_posix())
-        print("ok")
+
+        print("unbak done")
 
 exit(0)
