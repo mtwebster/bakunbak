@@ -27,9 +27,9 @@ def get_parser():
                         help='Filenames or patterns to backup or restore')
     group = parser.add_argument_group("miscellaneous")
     group.add_argument("-d", "--debug", action="store_true",
-                       help="Show lots of info about what's going on.")
+                       help="Show info about what's going on.")
     group.add_argument("-t", "--test", action="store_true",
-                       help="Test mode - used only for testing suite.")
+                       help=argparse.SUPPRESS)
     group.add_argument("-v", "--version", action="store_true",
                        help="Print the program version.")
     return parser
