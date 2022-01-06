@@ -4,7 +4,8 @@ Priority: optional
 Maintainer: Michael Webster <miketwebster@gmail.com>
 Standards-Version: 4.5.0
 Build-Depends:
- debhelper-compat (= 12)
+ debhelper-compat (= 12),
+ python3-argparse-manpage
 
 Package: bakunbak
 Architecture: all

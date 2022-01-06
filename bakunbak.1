@@ -1,0 +1,49 @@
+.TH bak | unbak "1" Manual
+.SH NAME
+bak | unbak
+.SH SYNOPSIS
+.B bak
+| unbak [-h] [-f] [-c] [-d] [-t] [-v] pattern [pattern ...]
+.SH DESCRIPTION
+    A simple utility to append .bak to files (either by renaming or copying)
+    and then restore them (again, either renaming or copying).
+    
+
+.TP
+\fBpattern\fR
+Filenames or patterns to backup or restore
+
+.SH OPTIONS
+.TP
+\fB\-f\fR, \fB\-\-force\fR
+Overwrite (bak) or restore (unbak) a file if the target exists.
+
+.TP
+\fB\-c\fR, \fB\-\-copy\fR
+When backing up, leave the original. When restoring, leave the backup.
+
+.SH MISCELLANEOUS
+.TP
+\fB\-d\fR, \fB\-\-debug\fR
+Show lots of info about what's going on.
+
+.TP
+\fB\-t\fR, \fB\-\-test\fR
+Test mode \- used only for testing suite.
+
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+Print the program version.
+
+.SH COMMENTS
+Note: when overwriting existing folders, the destination is first removed,
+then the source copied or moved. File metadata should be preserved in all
+cases.
+
+.SH AUTHORS
+.B bakunbak
+was written by Michael Webster <miketwebster@gmail.com>.
+.SH DISTRIBUTION
+The latest version of bakunbak may be downloaded from
+.UR https://github.com/mtwebster/bakunbak
+.UE
