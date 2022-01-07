@@ -86,7 +86,7 @@ class Bakunbak():
                     if source_file.is_dir():
                         shutil.rmtree(bakked_file, ignore_errors=True)
                         # FIXME: copytree won't copy dangling symlinks ?? even with symlinks=True
-                        os.system("cp -rP %s %s" % (source_file, bakked_file))
+                        subprocess.run(["cp", "-rP", source_file, bakked_file])
                         # shutil.copytree(filename, bakked_filename, dirs_exist_ok=True)
                     else:
                         shutil.copy2(source_file, bakked_file)
@@ -138,7 +138,7 @@ class Bakunbak():
                     if source_file.is_dir():
                         shutil.rmtree(unbakked_file, ignore_errors=True)
                         # FIXME: copytree won't copy dangling symlinks ?? even with symlinks=True
-                        os.system("cp -rP %s %s" % (source_file, unbakked_file))
+                        subprocess.run(["cp", "-rP", source_file, unbakked_file])
                         # shutil.copytree(source_file, unbakked_file, dirs_exist_ok=True)
                     else:
                         shutil.copy2(source_file, unbakked_file)
