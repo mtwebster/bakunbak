@@ -82,6 +82,10 @@ class Bakunbak():
                     else:
                         debug("%s exists, but continuing anyway because of --force" % bakked_file)
 
+                if not self.can_modify(source_file) or not self.can_modify(bakked_file):
+                    print("Skipping %s - insufficient permissions. Try again as root." % path)
+                    continue
+
                 if args.copy:
                     debug("copying %s to %s" % (source_file, bakked_file))
                     if source_file.is_dir():
@@ -134,6 +138,10 @@ class Bakunbak():
                     else:
                         debug("%s exists (probably from using -c originally), but continuing anyway because of --force" % unbakked_file)
 
+                if not self.can_modify(source_file) or not self.can_modify(unbakked_file):
+                    print("Skipping %s - insufficient permissions. Try again as root." % path)
+                    continue
+
                 if args.copy:
                     debug("copying %s to %s" % (source_file, unbakked_file))
                     if source_file.is_dir():
@@ -150,6 +158,18 @@ class Bakunbak():
                     shutil.move(source_file.as_posix(), unbakked_file.as_posix())
 
                 print("unbak done")
+
+    def can_modify(self, path):
+        # Ignore if a file doesn't exist, by the time this is called, we've already tested
+        # for missing/existing files.
+        if not os.access(path.parent, os.R_OK | os.W_OK):
+            return False
+
+        if not path.exists():
+            return True
+
+        return os.access(path, os.R_OK | os.W_OK)
+
 
 if __name__ == '__main__':
     Bakunbak().run()
